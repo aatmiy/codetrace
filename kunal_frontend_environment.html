@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CodeTrace • Student Environment & Examiner Audit Console</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js CDN for Telemetry Slopes -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Fonts: Space Grotesk & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Space+Grotesk:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Kunal Prajapati: Custom Neo-Brutalist Stylesheet -->
+  <link rel="stylesheet" href="kunal_styles.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lime: '#bbf451',
+            'pink-hot': '#ff4d80',
+            'purple-electric': '#5b46f6',
+            'cyan-bright': '#2de2e6',
+            'yellow-sun': '#fde047',
+            terminal: '#0d1117'
+          },
+          fontFamily: {
+            sans: ['Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          boxShadow: {
+            'brutal-xs': '2px 2px 0 #000',
+            'brutal-sm': '3px 3px 0 #000',
+            'brutal': '4px 4px 0 #000',
+            'brutal-lg': '6px 6px 0 #000'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="min-h-screen flex flex-col text-black select-none">
+
+  <!-- Top Institutional Bar -->
+  <aside class="bg-black text-white text-[11px] font-mono py-1 px-3 border-b-2 border-black flex items-center justify-between overflow-x-auto hide-scrollbar">
+    <div class="flex items-center gap-3 shrink-0">
+      <span class="bg-lime text-black px-1.5 py-0.5 font-black text-[9px] border border-black">GTU DIPLOMA CE SEM 5</span>
+      <span>Sardar Vallabhbhai Patel Institute of Technology (SVIT), VASAD • AY 2026–27</span>
+    </div>
+    <div class="flex items-center gap-3 shrink-0 text-gray-300">
+      <span>Guide: <strong class="text-lime">Prof. Hemali Nimavat</strong></span>
+      <span>•</span>
+      <span class="text-cyan-bright font-bold">CodeTrace v3.4 Modular Architecture</span>
+    </div>
+  </aside>
+
+  <!-- Main Navigation Header -->
+  <header class="bg-white border-b-4 border-black sticky top-0 z-40 px-3 py-2.5 shadow-brutal flex items-center justify-between gap-2">
+    <!-- Brand & Identity -->
+    <div class="flex items-center gap-2 md:gap-3">
+      <div class="bg-lime px-3 py-1 border-3 border-black font-black text-sm md:text-lg uppercase shadow-brutal-sm flex items-center gap-1.5 rotate-[-1deg]">
+        <i class="fa-solid fa-code text-black text-sm"></i>
+        <span>CODETRACE ⚡</span>
+      </div>
+
+      <!-- Live Candidate Pill -->
+      <div class="hidden sm:flex items-center bg-[#fdfbf7] border-2 border-black px-2.5 py-1 text-xs font-mono shadow-brutal-xs">
+        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black mr-2 animate-pulse"></div>
+        <div>
+          <span class="font-black text-black">Aatmiy Chavda</span>
+          <span class="text-gray-500 text-[10px] ml-1">(Roll: 24020301 • Workstation: T-01)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center / Right Controls -->
+    <div class="flex items-center gap-2">
+      <!-- Mode View Switcher -->
+      <div class="flex items-center bg-gray-100 p-0.5 border-3 border-black shadow-brutal-sm font-mono text-xs">
+        <button onclick="switchView('student')" id="navStudentBtn" class="bg-purple-electric text-white border-2 border-black px-3 py-1 font-extrabold flex items-center gap-1.5 btn-brutal">
+          <i class="fa-solid fa-terminal"></i>
+          <span class="hidden md:inline">STUDENT</span> WORKSPACE
+        </button>
+        <button onclick="switchView('examiner')" id="navExaminerBtn" class="bg-white text-black border-2 border-transparent px-3 py-1 font-bold flex items-center gap-1.5 hover:border-black transition-all">
+          <i class="fa-solid fa-shield-halved text-pink-hot"></i>
+          <span>EXAMINER AUDIT</span>
+          <span id="navLockDot" class="w-2 h-2 rounded-full bg-pink-hot border border-black ml-0.5"></span>
+        </button>
+      </div>
+
+      <!-- Run Code Trigger -->
+      <button onclick="runCode()" class="bg-lime hover:bg-[#aef130] text-black border-3 border-black px-3.5 py-1.5 font-black text-xs md:text-sm shadow-brutal-sm flex items-center gap-2 btn-brutal shrink-0">
+        <i class="fa-solid fa-bolt text-xs"></i>
+        <span>RUN [F5]</span>
+      </button>
+
+      <!-- Task Drawer Toggle -->
+      <button onclick="toggleQuestionDrawer()" class="bg-yellow-sun text-black border-3 border-black px-2.5 py-1.5 font-bold text-xs shadow-brutal-sm btn-brutal hidden md:flex items-center gap-1">
+        <i class="fa-solid fa-file-lines text-xs"></i>
+        <span>PRACTICAL</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Multi-Language Ribbon & Viva Demo Triggers -->
+  <div class="bg-slate-200 border-b-3 border-black px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+    <!-- Supported Compiler Languages -->
+    <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar py-0.5">
+      <span class="text-[10px] font-black uppercase text-gray-600 mr-1 hidden sm:inline">COMPILER:</span>
+      <button onclick="setLanguage('python')" id="lang-python" class="lang-pill bg-lime font-black border-2 border-black px-2.5 py-0.5 shadow-brutal-xs whitespace-nowrap btn-brutal">Python 3</button>
+      <button onclick="setLanguage('cpp')" id="lang-cpp" class="lang-pill bg-white font-bold border-2 border-black px-2.5 py-0.5 shadow-brutal-xs whitespace-nowrap btn-brutal">C++ (GCC)</button>
+      <button onclick="setLanguage('c')" id="lang-c" class="lang-pill bg-white font-bold border-2 border-black px-2.5 py-0.5 shadow-brutal-xs whitespace-nowrap btn-brutal">C (C11)</button>
+      <button onclick="setLanguage('java')" id="lang-java" class="lang-pill bg-white font-bold border-2 border-black px-2.5 py-0.5 shadow-brutal-xs whitespace-nowrap btn-brutal">Java (JDK)</button>
+      <button onclick="setLanguage('javascript')" id="lang-javascript" class="lang-pill bg-white font-bold border-2 border-black px-2.5 py-0.5 shadow-brutal-xs whitespace-nowrap btn-brutal">JavaScript</button>
+      <button onclick="setLanguage('php')" id="lang-php" class="lang-pill bg-white font-bold border-2 border-black px-2.5 py-0.5 shadow-brutal-xs whitespace-nowrap btn-brutal">PHP 8.2</button>
+      <button onclick="setLanguage('html')" id="lang-html" class="lang-pill bg-white font-bold border-2 border-black px-2.5 py-0.5 shadow-brutal-xs whitespace-nowrap btn-brutal">HTML5/CSS</button>
+    </div>
+
+    <!-- Presentation Simulation Triggers (Aatmiy Tracking Demo) -->
+    <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+      <span class="text-[9px] font-black text-gray-500 uppercase hidden lg:inline">VIVA DEMO:</span>
+      <button onclick="simulateGradualTyping()" title="Demonstrate steady natural human typing" class="bg-white hover:bg-lime text-black font-extrabold border-2 border-black px-2 py-0.5 text-[11px] shadow-brutal-xs flex items-center gap-1 btn-brutal">
+        <i class="fa-solid fa-keyboard text-[10px] text-purple-electric"></i>
+        <span>1. Natural Typing</span>
+      </button>
+      <button onclick="simulateBulkPaste()" title="Demonstrate sudden unauthorized paste dump" class="bg-white hover:bg-pink-hot hover:text-white text-black font-extrabold border-2 border-black px-2 py-0.5 text-[11px] shadow-brutal-xs flex items-center gap-1 btn-brutal">
+        <i class="fa-solid fa-paste text-[10px] text-pink-hot"></i>
+        <span>2. Bulk Paste (Cheat)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN VIEWPORT CONTAINER -->
+  <main class="flex-grow flex flex-col p-2 md:p-3 max-w-[1700px] w-full mx-auto gap-3">
+
+    <!-- ========================================== -->
+    <!-- VIEW A: STUDENT CODING ENVIRONMENT        -->
+    <!-- ========================================== -->
+    <div id="studentViewSection" class="flex-grow flex flex-col lg:flex-row gap-3">
+      
+      <!-- Left Practical Task Drawer (Collapsible) -->
+      <div id="questionDrawer" class="w-full lg:w-80 bg-white border-3 border-black shadow-brutal flex flex-col shrink-0">
+        <div class="bg-yellow-sun border-b-3 border-black p-2 flex items-center justify-between">
+          <div class="flex items-center gap-1.5 font-black text-xs uppercase tracking-tight">
+            <i class="fa-solid fa-clipboard-question"></i>
+            <span>EXAM PRACTICAL QUESTION</span>
+          </div>
+          <span class="bg-black text-white px-1.5 py-0.2 text-[10px] font-mono font-bold">100 MARKS</span>
+        </div>
+
+        <div class="p-3 font-mono text-xs overflow-y-auto flex-grow flex flex-col gap-2.5">
+          <div class="bg-slate-50 border-2 border-black p-2">
+            <span class="text-[9px] font-black text-gray-500 uppercase block">SUBJECT / SEMESTER</span>
+            <p class="font-bold text-black text-xs">Advanced Programming Lab (3150702) • CE Sem 5</p>
+          </div>
+
+          <div class="bg-[#fdfbf7] border-2 border-black p-2.5">
+            <span class="bg-purple-electric text-white px-1 py-0.2 text-[9px] font-black uppercase inline-block mb-1">TASK STATEMENT</span>
+            <p id="taskStatementText" class="text-xs font-semibold text-gray-900 leading-relaxed">
+              Write a robust function to identify the second largest distinct number in a randomly ordered numeric collection without using standard library sort utilities.
+            </p>
+          </div>
+
+          <!-- Quick Practical Presets Dropdown -->
+          <div class="border-2 border-black p-2 bg-slate-50">
+            <label class="text-[10px] font-black text-gray-600 block mb-1 uppercase">CURRICULUM PRESETS:</label>
+            <select id="practicalPresetSelect" onchange="loadCurriculumPractical(this.value)" class="w-full bg-white border-2 border-black p-1 text-xs font-mono font-bold focus:outline-none">
+              <option value="py_second_largest">Python: Second Largest Number</option>
+              <option value="cpp_oop_class">C++: Student Record Class</option>
+              <option value="c_pointers">C: Pointer Address Swapping</option>
+              <option value="java_arraylist">Java: Collection Search</option>
+              <option value="js_dom_counter">JS: Array Reducer Aggregation</option>
+              <option value="bootstrap_cards">HTML: Bootstrap 5 Layout</option>
+              <option value="php_form_validation">PHP: Registration Validator</option>
+            </select>
+          </div>
+
+          <div class="mt-auto border-2 border-dashed border-gray-400 p-2 text-[11px] text-gray-600">
+            <p class="font-bold text-black mb-1"><i class="fa-solid fa-shield-halved text-purple-electric mr-1"></i>Exam Integrity Policy:</p>
+            <p>CodeTrace passively verifies chronological evolution. Do not paste code from external flash storage.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Editor & Terminal Grid -->
+      <div class="flex-grow flex flex-col gap-3">
+        
+        <!-- Code Editor Card -->
+        <div class="bg-white border-3 border-black shadow-brutal flex flex-col h-[380px] lg:h-[450px]">
+          <!-- Editor Header -->
+          <div class="bg-[#0f172a] text-white px-3 py-1.5 border-b-3 border-black flex items-center justify-between font-mono text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-red-500 border border-black inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-yellow-400 border border-black inline-block"></span>
+              <span class="w-3 h-3 rounded-full bg-green-500 border border-black inline-block"></span>
+              <span id="currentFileName" class="text-lime font-bold ml-1">main.py</span>
+            </div>
+
+            <!-- In-Editor Telemetry Metrics (Silently Logged) -->
+            <div class="flex items-center gap-3 text-[11px]">
+              <span id="statLineCount" class="text-gray-400">Lines: 14</span>
+              <span id="statCharCount" class="text-gray-400">Chars: 382</span>
+              <span class="bg-slate-800 text-lime px-2 py-0.5 border border-slate-700 font-bold" id="keystrokeCounter">Keys: 0</span>
+              <button onclick="copyCodeToClipboard()" class="text-gray-300 hover:text-white" title="Copy Code"><i class="fa-regular fa-copy"></i></button>
+            </div>
+          </div>
+
+          <!-- Code Canvas Container -->
+          <div class="flex-grow flex overflow-hidden bg-[#0d1117] text-gray-100 font-mono text-sm relative">
+            <!-- Line Numbers Gutter -->
+            <div id="lineNumbers" class="w-10 bg-[#161b22] text-gray-500 py-3 px-1 text-right select-none font-mono text-xs code-gutter border-r border-gray-800 shrink-0">
+              <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div>
+            </div>
+
+            <!-- Textarea Coding Canvas -->
+            <textarea id="codeEditor" spellcheck="false" 
+              class="flex-grow bg-transparent text-[#e6edf3] font-mono p-3 focus:outline-none resize-none leading-relaxed text-xs md:text-sm selection:bg-purple-electric selection:text-white"
+              oninput="handleEditorInput()"
+              onpaste="handleEditorPaste(event)"
+              placeholder="// Type your practical solution here..."></textarea>
+          </div>
+
+          <!-- Editor Footer Bar -->
+          <div class="bg-gray-100 border-t-2 border-black px-3 py-1 flex items-center justify-between font-mono text-[11px]">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span class="text-gray-600">UTF-8 • Tab Size: 4 Spaces</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-600">
+              <span id="typingVelocityBadge">0 chars/sec</span>
+              <span>•</span>
+              <span class="text-purple-electric font-bold">CodeTrace Protected</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal & Output Section -->
+        <div class="bg-white border-3 border-black shadow-brutal flex flex-col h-[230px]">
+          <!-- Terminal Tabs -->
+          <div class="bg-black text-white px-2 py-1 border-b-3 border-black flex items-center justify-between font-mono text-xs">
+            <div class="flex items-center gap-1">
+              <button onclick="switchOutputTab('terminal')" id="tabTerminalBtn" class="px-2.5 py-0.5 bg-purple-electric text-white border border-white font-bold btn-brutal">
+                <i class="fa-solid fa-terminal mr-1"></i>OUTPUT CONSOLE
+              </button>
+              <button onclick="switchOutputTab('preview')" id="tabWebPreviewBtn" class="px-2.5 py-0.5 bg-neutral-800 text-neutral-300 border border-neutral-700 font-bold btn-brutal">
+                <i class="fa-solid fa-globe mr-1"></i>WEB SANDBOX
+              </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="terminalStatusText" class="text-lime text-[10px] font-bold">READY</span>
+              <button onclick="clearConsoleOutput()" class="text-gray-400 hover:text-white text-xs px-1" title="Clear Console"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </div>
+
+          <!-- Output Content Area -->
+          <div class="flex-grow overflow-hidden relative">
+            <!-- CLI Console View -->
+            <pre id="outputTerminalView" class="w-full h-full p-3 bg-terminal text-gray-200 font-mono text-xs overflow-y-auto leading-relaxed select-text"></pre>
+
+            <!-- Web Sandbox Iframe View -->
+            <div id="outputWebPreviewView" class="w-full h-full hidden bg-white">
+              <iframe id="livePreviewFrame" class="w-full h-full border-none" sandbox="allow-scripts allow-modals"></iframe>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW B: EXAMINER AUDIT & LAB ROSTER VIEW  -->
+    <!-- ========================================== -->
+    <div id="examinerViewSection" class="hidden flex-grow flex flex-col gap-3">
+      
+      <!-- Multi-Candidate Lab Roster Header -->
+      <div class="bg-white border-3 border-black p-3 shadow-brutal flex flex-col md:flex-row md:items-center justify-between gap-2">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="bg-pink-hot text-white px-2 py-0.5 text-xs font-black uppercase font-mono border-2 border-black">EXAMINER AUDIT ROSTER</span>
+            <h2 class="text-lg md:text-xl font-black">Computer Lab 302 • Practical Batch A</h2>
+          </div>
+          <p class="text-xs text-gray-600 font-mono mt-0.5">Monitoring 5 Workstations • SVIT Vasad Semester 5 Examination</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="bg-purple-electric text-white px-2.5 py-1 text-xs font-mono font-bold border-2 border-black">
+            <i class="fa-solid fa-user-shield mr-1"></i>FACULTY: PROF. HEMALI NIMAVAT
+          </span>
+          <button onclick="logoutExaminer()" class="bg-white text-black font-bold border-2 border-black px-2.5 py-1 text-xs font-mono btn-brutal hover:bg-gray-100">
+            <i class="fa-solid fa-lock mr-1 text-pink-hot"></i>LOCK
+          </button>
+        </div>
+      </div>
+
+      <!-- Candidate Grid Selection Strip -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 font-mono text-xs">
+        
+        <!-- Terminal 01: Aatmiy Chavda (Active Selected) -->
+        <div onclick="selectCandidateTerminal('aatmiy')" id="card-cand-aatmiy" class="bg-white border-3 border-black p-2.5 shadow-brutal-sm cursor-pointer hover:bg-yellow-50 transition-all border-lime">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="bg-lime text-black font-black px-1.5 py-0.2 border border-black text-[10px]">T-01 • LIVE</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse border border-black"></span>
+          </div>
+          <h4 class="font-bold text-sm text-black">Aatmiy Chavda</h4>
+          <p class="text-gray-500 text-[10px]">Roll: 24020301 • Python 3</p>
+          <div class="mt-2 pt-1.5 border-t border-gray-200 flex justify-between text-[10px]">
+            <span class="text-gray-600">Status:</span>
+            <span id="rosterStatusAatmiy" class="text-emerald-600 font-bold">NORMAL CODING</span>
+          </div>
+        </div>
+
+        <!-- Terminal 02: Nishant Savant -->
+        <div onclick="selectCandidateTerminal('nishant')" id="card-cand-nishant" class="bg-white border-3 border-black p-2.5 shadow-brutal-sm cursor-pointer hover:bg-yellow-50 transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="bg-slate-200 text-black font-black px-1.5 py-0.2 border border-black text-[10px]">T-02</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black"></span>
+          </div>
+          <h4 class="font-bold text-sm text-black">Nishant Savant</h4>
+          <p class="text-gray-500 text-[10px]">Roll: 24020302 • C++ 17</p>
+          <div class="mt-2 pt-1.5 border-t border-gray-200 flex justify-between text-[10px]">
+            <span class="text-gray-600">Status:</span>
+            <span class="text-emerald-600 font-bold">NORMAL CODING</span>
+          </div>
+        </div>
+
+        <!-- Terminal 03: Kunal Prajapati -->
+        <div onclick="selectCandidateTerminal('kunal')" id="card-cand-kunal" class="bg-white border-3 border-black p-2.5 shadow-brutal-sm cursor-pointer hover:bg-yellow-50 transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="bg-pink-100 text-pink-700 font-black px-1.5 py-0.2 border border-black text-[10px]">T-03</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-pink-hot border border-black"></span>
+          </div>
+          <h4 class="font-bold text-sm text-black">Kunal Prajapati</h4>
+          <p class="text-gray-500 text-[10px]">Roll: 24020303 • HTML5/CSS</p>
+          <div class="mt-2 pt-1.5 border-t border-gray-200 flex justify-between text-[10px]">
+            <span class="text-gray-600">Status:</span>
+            <span class="text-pink-600 font-black">FLAGGED REVIEW</span>
+          </div>
+        </div>
+
+        <!-- Terminal 04: Mohammad Haadi Kazi -->
+        <div onclick="selectCandidateTerminal('haadi')" id="card-cand-haadi" class="bg-white border-3 border-black p-2.5 shadow-brutal-sm cursor-pointer hover:bg-yellow-50 transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="bg-slate-200 text-black font-black px-1.5 py-0.2 border border-black text-[10px]">T-04</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black"></span>
+          </div>
+          <h4 class="font-bold text-sm text-black">Mohammad Haadi Kazi</h4>
+          <p class="text-gray-500 text-[10px]">Roll: 24020304 • PHP 8.2</p>
+          <div class="mt-2 pt-1.5 border-t border-gray-200 flex justify-between text-[10px]">
+            <span class="text-gray-600">Status:</span>
+            <span class="text-emerald-600 font-bold">NORMAL CODING</span>
+          </div>
+        </div>
+
+        <!-- Terminal 05: Rahul Patel -->
+        <div onclick="selectCandidateTerminal('rahul')" id="card-cand-rahul" class="bg-white border-3 border-black p-2.5 shadow-brutal-sm cursor-pointer hover:bg-yellow-50 transition-all">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="bg-slate-200 text-black font-black px-1.5 py-0.2 border border-black text-[10px]">T-05</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-black"></span>
+          </div>
+          <h4 class="font-bold text-sm text-black">Rahul Patel</h4>
+          <p class="text-gray-500 text-[10px]">Roll: 24020305 • Python 3</p>
+          <div class="mt-2 pt-1.5 border-t border-gray-200 flex justify-between text-[10px]">
+            <span class="text-gray-600">Status:</span>
+            <span class="text-yellow-600 font-bold">IDLE SESSION</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Anomaly Alert Banner (Appears ONLY on Examiner Screen) -->
+      <div id="examinerAnomalyBanner" class="hidden bg-pink-100 border-3 border-black p-3 shadow-brutal flex items-start gap-3">
+        <div class="bg-pink-hot text-white w-8 h-8 rounded-full border-2 border-black flex items-center justify-center shrink-0 font-black text-sm">
+          !
+        </div>
+        <div class="flex-grow">
+          <div class="flex items-center gap-2">
+            <span class="bg-pink-hot text-white px-2 py-0.2 text-[10px] font-black uppercase font-mono border border-black">INTEGRITY ADVISORY</span>
+            <h4 class="font-black text-sm text-pink-900">Activity Flagged for Manual Review</h4>
+          </div>
+          <p id="examinerAnomalyDesc" class="text-xs font-mono text-pink-800 mt-1">
+            Unusual bulk insertion detected: 214 characters placed in 16ms. Examiner manual verification advised.
+          </p>
+        </div>
+      </div>
+
+      <!-- Lower Split: Telemetry Chart & Time-Travel Code Scrubber -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        
+        <!-- Left 7 Cols: Dual-Axis Chart.js Curve -->
+        <div class="lg:col-span-7 bg-white border-3 border-black p-3 shadow-brutal flex flex-col h-[380px]">
+          <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2 font-mono text-xs">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-purple-electric"></i>
+              <span class="font-bold">CODE GROWTH TELEMETRY CURVE</span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px]">
+              <span class="flex items-center gap-1"><span class="w-3 h-1.5 bg-purple-electric inline-block"></span> Cumulative Chars</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-1.5 bg-pink-hot inline-block"></span> Insertion Velocity</span>
+            </div>
+          </div>
+          <div class="flex-grow relative">
+            <canvas id="telemetryChartCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Time-Travel Scrubber & Viva Question Prompts -->
+        <div class="lg:col-span-5 flex flex-col gap-3">
+          
+          <!-- Scrubber Card -->
+          <div class="bg-white border-3 border-black p-3 shadow-brutal flex flex-col">
+            <div class="flex items-center justify-between border-b-2 border-black pb-2 mb-2 font-mono text-xs">
+              <span class="font-bold"><i class="fa-solid fa-clock-rotate-left mr-1 text-cyan-500"></i>TIME-TRAVEL CODE REPLAY</span>
+              <span id="replayStepLabel" class="text-purple-electric font-black">Step 100% (Final)</span>
+            </div>
+            <input type="range" min="0" max="100" value="100" id="timeTravelSlider" oninput="handleReplayScrub(this.value)" class="w-full cursor-pointer accent-purple-electric mb-2">
+            <pre id="replayCodeBox" class="bg-slate-900 text-lime font-mono text-[11px] p-2.5 border-2 border-black h-36 overflow-y-auto leading-relaxed select-text"></pre>
+          </div>
+
+          <!-- Suggested Viva Question Card -->
+          <div class="bg-white border-3 border-black p-3 shadow-brutal flex flex-col">
+            <div class="flex items-center gap-1.5 font-mono text-xs font-bold mb-1 text-purple-electric">
+              <i class="fa-solid fa-lightbulb"></i>
+              <span>SUGGESTED VIVA PROMPT FOR EXAMINER:</span>
+            </div>
+            <p id="vivaQuestionPromptText" class="text-xs font-semibold text-gray-800 leading-snug">
+              "Candidate constructed the sorting loop between minute 04:12 and 06:40. Ask them to explain the boundary condition when array elements are negative."
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- FACULTY AUTHENTICATION MODAL DIALOG       -->
+  <!-- ========================================== -->
+  <div id="examinerAuthModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 backdrop-blur-sm">
+    <div class="bg-white border-4 border-black p-5 max-w-sm w-full shadow-brutal-lg flex flex-col gap-3">
+      <div class="flex items-center justify-between border-b-3 border-black pb-2">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-pink-hot"></i>
+          <h3 class="font-black text-sm uppercase">FACULTY ACCESS VERIFICATION</h3>
+        </div>
+        <button onclick="closeExaminerAuthModal()" class="text-gray-500 hover:text-black font-black text-base">✕</button>
+      </div>
+
+      <p class="text-xs text-gray-600 font-mono">
+        Enter registered faculty credentials to unlock live forensic telemetry and candidate audits.
+      </p>
+
+      <form onsubmit="handleExaminerLogin(event)" class="flex flex-col gap-2.5 font-mono text-xs">
+        <div>
+          <label class="block font-bold mb-1">FACULTY ID:</label>
+          <input type="text" id="authFacultyId" value="FAC-SVIT-CE" class="w-full border-2 border-black p-2 font-bold focus:outline-none focus:bg-yellow-50">
+        </div>
+        <div>
+          <label class="block font-bold mb-1">PASSCODE:</label>
+          <input type="password" id="authPasscode" placeholder="Enter PIN (e.g. svit2026)" class="w-full border-2 border-black p-2 font-bold focus:outline-none focus:bg-yellow-50">
+        </div>
+
+        <div id="authErrorMessage" class="hidden text-pink-600 font-black text-[11px]">
+          Invalid passcode. Demo pass: svit2026
+        </div>
+
+        <div class="flex items-center gap-2 mt-2">
+          <button type="submit" class="flex-grow bg-purple-electric hover:bg-purple-700 text-white font-black py-2 border-2 border-black shadow-brutal-xs btn-brutal">
+            UNLOCK AUDIT →
+          </button>
+          <button type="button" onclick="quickFillCredentials()" class="bg-lime text-black font-black py-2 px-3 border-2 border-black shadow-brutal-xs btn-brutal">
+            AUTO-FILL
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div id="toastNotice" class="hidden fixed bottom-4 right-4 bg-black text-lime font-mono text-xs font-black px-4 py-2 border-2 border-lime shadow-brutal-sm z-50"></div>
+<!-- ... existing code ... -->
+      <!-- Center / Right Controls -->
+      <div class="flex items-center gap-2">
+        <!-- Mode View Switcher -->
+        <div class="flex items-center bg-gray-100 p-0.5 border-3 border-black shadow-brutal-sm font-mono text-xs">
+          <button onclick="switchView('student')" id="navStudentBtn" class="bg-purple-electric text-white border-2 border-black px-3 py-1 font-extrabold flex items-center gap-1.5 btn-brutal">
+            <i class="fa-solid fa-terminal"></i>
+            <span class="hidden md:inline">STUDENT</span> WORKSPACE
+          </button>
+          <button onclick="switchView('examiner')" id="navExaminerBtn" class="bg-white text-black border-2 border-transparent px-3 py-1 font-bold flex items-center gap-1.5 hover:border-black transition-all">
+            <i class="fa-solid fa-shield-halved text-pink-hot"></i>
+            <span>EXAMINER AUDIT</span>
+            <span id="navLockDot" class="w-2 h-2 rounded-full bg-pink-hot border border-black ml-0.5"></span>
+          </button>
+        </div>
+
+        <!-- Real Compiler Run Button -->
+        <button onclick="runCode()" id="runCodeMainBtn" class="bg-lime hover:bg-[#aef130] text-black border-3 border-black px-3.5 py-1.5 font-black text-xs md:text-sm shadow-brutal-sm flex items-center gap-2 btn-brutal shrink-0">
+          <i class="fa-solid fa-bolt text-xs"></i>
+          <span>RUN CODE [F5]</span>
+        </button>
+
+        <!-- Task Drawer Toggle -->
+        <button onclick="toggleQuestionDrawer()" class="bg-yellow-sun text-black border-3 border-black px-2.5 py-1.5 font-bold text-xs shadow-brutal-sm btn-brutal hidden md:flex items-center gap-1">
+          <i class="fa-solid fa-file-lines text-xs"></i>
+          <span>PRACTICAL</span>
+        </button>
+      </div>
+    </header>
+<!-- ... existing code ... -->
+  <!-- TEAM JAVASCRIPT MODULE IMPORTS (Preserving Team Architecture) -->
+  <script src="nishant_backend_api_service.js"></script>
+  <script src="aatmiy_tracking_detection_engine.js"></script>
+  <script src="haadi_database_examiner_analytics.js"></script>
+
+</body>
+</html>
